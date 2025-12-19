@@ -1,63 +1,250 @@
-# ⚽ Elifoot Web – Football Manager em JavaScript
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Elifoot Web</title>
 
-Projeto de jogo de gerenciamento de futebol inspirado no clássico **Elifoot**, desenvolvido em **HTML, CSS e JavaScript puro**, rodando diretamente no navegador (GitHub Pages).
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0b6623;
+  color: white;
+  text-align: center;
+}
+button {
+  padding: 6px 10px;
+  margin: 3px;
+}
+table {
+  margin: 15px auto;
+  border-collapse: collapse;
+}
+td, th {
+  border: 1px solid white;
+  padding: 6px 10px;
+}
+.highlight {
+  background: gold;
+  color: black;
+}
+.injured { color: #ff6666; font-weight: bold; }
+.reserve { color: #ccc; }
+</style>
+</head>
 
-🔗 **Demo:** https://arthurmace.github.io/elifoot/
+<body>
 
----
+<h1>⚽ ELIFOOT WEB</h1>
 
-## 🎮 Sobre o Projeto
+<div id="screen-select">
+  <h2>Escolha seu time</h2>
+</div>
 
-O **Elifoot Web** é um jogo de gestão onde o jogador assume o controle total de um clube de futebol, tomando decisões estratégicas que impactam o desempenho da equipe ao longo das temporadas.
+<div id="screen-game" style="display:none">
+  <h2 id="teamName"></h2>
+  <p>Rodada <span id="round"></span>/<span id="totalRounds"></span></p>
 
-O foco do projeto é **lógica de programação, simulação e estado de jogo**, sem uso de frameworks externos.
+  <button onclick="playRound()">▶ Jogar Rodada</button>
+  <button onclick="showSquad()">👥 Escalação</button>
+  <button onclick="showTable()">📊 Classificação</button>
+  <button onclick="newGame()">🆕 Novo Jogo</button>
 
----
+  <div id="output"></div>
+</div>
 
-## 🧠 Funcionalidades
+<script>
+const KEY="elifoot-save";
 
-### ⚽ Partidas
-- Simulação automática de jogos
-- Resultado baseado em força do elenco
-- Sistema de pontuação (vitória, empate, derrota)
+/* ================= TIMES ================= */
+let teams=[
+  {
+    name:"Sparta FC",
+    players:[
+      {name:"Leonidas",atk:80,def:20,fit:100,moral:70,injured:false,injuryTime:0,starter:true},
+      {name:"Ajax",atk:65,def:50,fit:100,moral:70,injured:false,injuryTime:0,starter:true},
+      {name:"Hector",atk:30,def:75,fit:100,moral:70,injured:false,injuryTime:0,starter:true},
+      {name:"Darius",atk:55,def:55,fit:100,moral:70,injured:false,injuryTime:0,starter:false}
+    ],
+    pts:0
+  },
+  {
+    name:"Roma FC",
+    players:[
+      {name:"Cesar",atk:75,def:25,fit:100,moral:70,injured:false,injuryTime:0,starter:true},
+      {name:"Brutus",atk:60,def:55,fit:100,moral:70,injured:false,injuryTime:0,starter:true},
+      {name:"Maximus",atk:35,def:70,fit:100,moral:70,injured:false,injuryTime:0,starter:true},
+      {name:"Titus",atk:50,def:50,fit:100,moral:70,injured:false,injuryTime:0,starter:false}
+    ],
+    pts:0
+  }
+];
 
-### 👥 Gestão de Elenco
-- Escalação de **titulares e reservas**
-- Jogadores reservas recuperam forma física
-- Titulares se cansam e correm risco de lesão
+/* ================= JOGO ================= */
+let myTeam="";
+let currentRound=0;
+let schedule=[];
 
-### 🩺 Sistema de Lesões
-- Probabilidade de lesão baseada no nível de cansaço
-- Jogadores lesionados ficam fora por múltiplas rodadas
-- Recuperação automática após o tempo de lesão
+/* ================= TEMPORADA ================= */
+function generateSeason(){
+  let g=[];
+  for(let i=0;i<teams.length;i++){
+    for(let j=i+1;j<teams.length;j++){
+      g.push({h:teams[i].name,a:teams[j].name});
+      g.push({h:teams[j].name,a:teams[i].name});
+    }
+  }
+  return g;
+}
 
-### 💪 Forma Física
-- Forma física influencia diretamente o desempenho
-- Gestão estratégica de descanso é necessária
+/* ================= SAVE ================= */
+function saveGame(){
+  localStorage.setItem(KEY,JSON.stringify({teams,myTeam,currentRound,schedule}));
+}
+function loadGame(){
+  const s=localStorage.getItem(KEY);
+  if(!s) return false;
+  const d=JSON.parse(s);
+  teams=d.teams; myTeam=d.myTeam;
+  currentRound=d.currentRound; schedule=d.schedule;
+  return true;
+}
 
-### 📅 Temporadas
-- Calendário completo de jogos
-- Classificação por pontos
-- Progressão rodada a rodada
+/* ================= START ================= */
+const selectDiv=document.getElementById("screen-select");
+const gameDiv=document.getElementById("screen-game");
 
-### 💾 Salvamento
-- Progresso salvo automaticamente usando **LocalStorage**
-- Continuação do jogo mesmo após fechar o navegador
+function setupSelection(){
+  teams.forEach(t=>{
+    const b=document.createElement("button");
+    b.innerText=t.name;
+    b.onclick=()=>startGame(t.name);
+    selectDiv.appendChild(b);
+  });
+}
+function startGame(team){
+  myTeam=team;
+  schedule=generateSeason();
+  showGame();
+  saveGame();
+}
+function showGame(){
+  selectDiv.style.display="none";
+  gameDiv.style.display="block";
+  document.getElementById("teamName").innerText="Seu time: "+myTeam;
+  document.getElementById("round").innerText=currentRound+1;
+  document.getElementById("totalRounds").innerText=schedule.length;
+}
 
----
+/* ================= FORÇA ================= */
+function teamStats(team){
+  let atk=0,def=0;
+  team.players.forEach(p=>{
+    if(p.starter && !p.injured){
+      atk+=p.atk*(p.fit/100);
+      def+=p.def*(p.fit/100);
+    }
+  });
+  return {atk,def};
+}
 
-## 🛠️ Tecnologias Utilizadas
+/* ================= PARTIDA ================= */
+function playRound(){
+  if(currentRound>=schedule.length) return;
 
-- **HTML5**
-- **CSS3**
-- **JavaScript Vanilla**
-- **GitHub Pages** para hospedagem
+  const m=schedule[currentRound];
+  const h=teams.find(t=>t.name===m.h);
+  const a=teams.find(t=>t.name===m.a);
 
----
+  const hs=teamStats(h);
+  const as=teamStats(a);
 
-## 🚀 Como Executar
+  const gh=Math.floor(Math.random()*3+hs.atk/60);
+  const ga=Math.floor(Math.random()*3+as.atk/60);
 
-### Localmente
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/arthurmace/elifoot.git
+  if(gh>ga) h.pts+=3;
+  else if(ga>gh) a.pts+=3;
+  else {h.pts++;a.pts++;}
+
+  [h,a].forEach(team=>{
+    team.players.forEach(p=>{
+      if(p.starter && !p.injured){
+        p.fit=Math.max(0,p.fit-12);
+        injuryCheck(p);
+      }
+      if(!p.starter && !p.injured){
+        p.fit=Math.min(100,p.fit+8);
+      }
+      if(p.injured){
+        p.injuryTime--;
+        if(p.injuryTime<=0) p.injured=false;
+      }
+    });
+  });
+
+  document.getElementById("output").innerHTML=
+    `<h3>${h.name} ${gh} x ${ga} ${a.name}</h3>`;
+
+  currentRound++;
+  showGame();
+  saveGame();
+}
+
+/* ================= LESÃO ================= */
+function injuryCheck(p){
+  let chance=p.fit>70?0.05:p.fit>40?0.12:0.25;
+  if(Math.random()<chance){
+    p.injured=true;
+    p.injuryTime=[1,2,3][Math.floor(Math.random()*3)];
+  }
+}
+
+/* ================= ESCALAÇÃO ================= */
+function toggleStarter(i){
+  const t=teams.find(x=>x.name===myTeam);
+  t.players[i].starter=!t.players[i].starter;
+  saveGame();
+  showSquad();
+}
+
+function showSquad(){
+  const t=teams.find(x=>x.name===myTeam);
+  let html="<table><tr><th>Nome</th><th>ATK</th><th>DEF</th><th>Fit</th><th>Status</th><th>Ação</th></tr>";
+  t.players.forEach((p,i)=>{
+    html+=`<tr class="${!p.starter?'reserve':''}">
+      <td>${p.name}</td>
+      <td>${p.atk}</td>
+      <td>${p.def}</td>
+      <td>${p.fit}</td>
+      <td class="${p.injured?'injured':''}">
+        ${p.injured?'Lesão':'${p.starter?'Titular':'Reserva'}'}
+      </td>
+      <td><button onclick="toggleStarter(${i})">Trocar</button></td>
+    </tr>`;
+  });
+  html+="</table>";
+  document.getElementById("output").innerHTML=html;
+}
+
+/* ================= TABELA ================= */
+function showTable(){
+  let html="<table><tr><th>Time</th><th>Pts</th></tr>";
+  teams.forEach(t=>{
+    html+=`<tr class="${t.name===myTeam?'highlight':''}">
+      <td>${t.name}</td><td>${t.pts}</td></tr>`;
+  });
+  html+="</table>";
+  document.getElementById("output").innerHTML=html;
+}
+
+function newGame(){
+  localStorage.removeItem(KEY);
+  location.reload();
+}
+
+/* ================= INIT ================= */
+if(loadGame()) showGame();
+else setupSelection();
+</script>
+
+</body>
+</html>

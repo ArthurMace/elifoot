@@ -32,6 +32,11 @@ td, th {
   border: 1px solid white;
   padding: 6px 10px;
 }
+
+.highlight {
+  background: #ffd700;
+  color: black;
+}
 </style>
 </head>
 
@@ -39,15 +44,15 @@ td, th {
 
 <h1>⚽ ELIFOOT WEB</h1>
 
-<!-- TELA 1 -->
+<!-- SELEÇÃO -->
 <div id="screen-select">
   <h2>Escolha seu time</h2>
 </div>
 
-<!-- TELA 2 -->
+<!-- JOGO -->
 <div id="screen-game" class="hidden">
   <h2 id="myTeam"></h2>
-  <p>Rodada <span id="round">1</span></p>
+  <p>Rodada <span id="round">1</span> / <span id="totalRounds"></span></p>
 
   <button onclick="playRound()">▶ Jogar Rodada</button>
   <button onclick="showTable()">📊 Classificação</button>
@@ -57,8 +62,8 @@ td, th {
 
 <script>
 /* ===== DADOS ===== */
-let round = 1;
 let myTeam = "";
+let currentRound = 0;
 
 const teams = [
   { name: "Sparta FC", pts: 0, gf: 0, ga: 0 },
@@ -66,6 +71,20 @@ const teams = [
   { name: "Athenas FC", pts: 0, gf: 0, ga: 0 },
   { name: "Troia FC", pts: 0, gf: 0, ga: 0 }
 ];
+
+/* ===== GERAR CALENDÁRIO (TURNO) ===== */
+function generateSchedule(teamList) {
+  const schedule = [];
+  for (let i = 0; i < teamList.length; i++) {
+    for (let j = i + 1; j < teamList.length; j++) {
+      schedule.push([teamList[i], teamList[j]]);
+    }
+  }
+  return schedule;
+}
+
+const schedule = generateSchedule(teams);
+const totalRounds = schedule.length;
 
 /* ===== TELA DE SELEÇÃO ===== */
 const selectDiv = document.getElementById("screen-select");
@@ -85,32 +104,37 @@ function startGame(teamName) {
   document.getElementById("screen-game").classList.remove("hidden");
 
   document.getElementById("myTeam").innerText = "Seu time: " + myTeam;
+  document.getElementById("totalRounds").innerText = totalRounds;
 }
 
 /* ===== JOGAR RODADA ===== */
 function playRound() {
-  let html = `<h3>Resultados da Rodada ${round}</h3>`;
-
-  for (let i = 0; i < teams.length; i += 2) {
-    const a = teams[i];
-    const b = teams[i + 1];
-
-    const ga = Math.floor(Math.random() * 4);
-    const gb = Math.floor(Math.random() * 4);
-
-    a.gf += ga; a.ga += gb;
-    b.gf += gb; b.ga += ga;
-
-    if (ga > gb) a.pts += 3;
-    else if (gb > ga) b.pts += 3;
-    else { a.pts++; b.pts++; }
-
-    html += `<p>${a.name} ${ga} x ${gb} ${b.name}</p>`;
+  if (currentRound >= totalRounds) {
+    finishSeason();
+    return;
   }
 
-  document.getElementById("output").innerHTML = html;
-  round++;
-  document.getElementById("round").innerText = round;
+  const match = schedule[currentRound];
+  const a = match[0];
+  const b = match[1];
+
+  const ga = Math.floor(Math.random() * 4);
+  const gb = Math.floor(Math.random() * 4);
+
+  a.gf += ga; a.ga += gb;
+  b.gf += gb; b.ga += ga;
+
+  if (ga > gb) a.pts += 3;
+  else if (gb > ga) b.pts += 3;
+  else { a.pts++; b.pts++; }
+
+  document.getElementById("output").innerHTML = `
+    <h3>Rodada ${currentRound + 1}</h3>
+    <p>${a.name} ${ga} x ${gb} ${b.name}</p>
+  `;
+
+  currentRound++;
+  document.getElementById("round").innerText = currentRound + 1;
 }
 
 /* ===== CLASSIFICAÇÃO ===== */
@@ -130,8 +154,9 @@ function showTable() {
     .slice()
     .sort((a, b) => b.pts - a.pts)
     .forEach(t => {
+      const cls = t.name === myTeam ? "highlight" : "";
       html += `
-        <tr>
+        <tr class="${cls}">
           <td>${t.name}</td>
           <td>${t.pts}</td>
           <td>${t.gf}</td>
@@ -142,6 +167,18 @@ function showTable() {
 
   html += "</table>";
   document.getElementById("output").innerHTML = html;
+}
+
+/* ===== FIM DA TEMPORADA ===== */
+function finishSeason() {
+  const champion = teams
+    .slice()
+    .sort((a, b) => b.pts - a.pts)[0];
+
+  document.getElementById("output").innerHTML = `
+    <h2>🏆 Fim da Temporada</h2>
+    <p>Campeão: <strong>${champion.name}</strong></p>
+  `;
 }
 </script>
 

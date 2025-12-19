@@ -15,7 +15,6 @@ body {
 button {
   padding: 8px 16px;
   margin: 5px;
-  font-size: 15px;
   cursor: pointer;
 }
 
@@ -42,38 +41,59 @@ td, th {
 
 <h1>⚽ ELIFOOT WEB</h1>
 
-<!-- SELEÇÃO -->
 <div id="screen-select">
   <h2>Escolha seu time</h2>
 </div>
 
-<!-- JOGO -->
 <div id="screen-game" class="hidden">
   <h2 id="teamName"></h2>
   <p>💰 Dinheiro: $<span id="money"></span></p>
-  <p>Rodada <span id="round"></span> / <span id="totalRounds"></span></p>
+  <p>Rodada <span id="round"></span>/<span id="totalRounds"></span></p>
 
   <button onclick="playRound()">▶ Jogar Rodada</button>
-  <button onclick="showTable()">📊 Classificação</button>
+  <button onclick="showSquad()">👥 Elenco</button>
   <button onclick="showMarket()">💸 Mercado</button>
+  <button onclick="showTable()">📊 Classificação</button>
   <button onclick="newGame()">🆕 Novo Jogo</button>
 
   <div id="output"></div>
 </div>
 
 <script>
-/* ================== STORAGE ================== */
 const KEY = "elifoot-save";
 
 /* ================== TIMES ================== */
 let teams = [
-  { name: "Sparta FC", pts: 0, gf: 0, ga: 0, atk: 80, def: 75 },
-  { name: "Roma FC", pts: 0, gf: 0, ga: 0, atk: 75, def: 72 },
-  { name: "Athenas FC", pts: 0, gf: 0, ga: 0, atk: 70, def: 68 },
-  { name: "Troia FC", pts: 0, gf: 0, ga: 0, atk: 65, def: 65 }
+  {
+    name: "Sparta FC",
+    players: [
+      { name: "Leonidas", pos: "ATA", atk: 80, def: 20, price: 60 },
+      { name: "Ajax", pos: "MEI", atk: 65, def: 50, price: 50 },
+      { name: "Hector", pos: "ZAG", atk: 30, def: 75, price: 45 }
+    ],
+    pts: 0, gf: 0, ga: 0
+  },
+  {
+    name: "Roma FC",
+    players: [
+      { name: "Cesar", pos: "ATA", atk: 75, def: 25, price: 55 },
+      { name: "Brutus", pos: "MEI", atk: 60, def: 55, price: 48 },
+      { name: "Maximus", pos: "ZAG", atk: 35, def: 70, price: 42 }
+    ],
+    pts: 0, gf: 0, ga: 0
+  },
+  {
+    name: "Athenas FC",
+    players: [
+      { name: "Pericles", pos: "ATA", atk: 70, def: 30, price: 50 },
+      { name: "Plato", pos: "MEI", atk: 65, def: 45, price: 46 },
+      { name: "Socrates", pos: "ZAG", atk: 28, def: 72, price: 43 }
+    ],
+    pts: 0, gf: 0, ga: 0
+  }
 ];
 
-/* ================== PLAYER ================== */
+/* ================== JOGO ================== */
 let myTeam = "";
 let money = 100;
 let currentRound = 0;
@@ -91,7 +111,7 @@ function generateSeason() {
   return games;
 }
 
-/* ================== SAVE / LOAD ================== */
+/* ================== SAVE ================== */
 function saveGame() {
   localStorage.setItem(KEY, JSON.stringify({
     teams, myTeam, money, currentRound, schedule
@@ -101,13 +121,12 @@ function saveGame() {
 function loadGame() {
   const data = localStorage.getItem(KEY);
   if (!data) return false;
-
-  const save = JSON.parse(data);
-  teams = save.teams;
-  myTeam = save.myTeam;
-  money = save.money;
-  currentRound = save.currentRound;
-  schedule = save.schedule;
+  const s = JSON.parse(data);
+  teams = s.teams;
+  myTeam = s.myTeam;
+  money = s.money;
+  currentRound = s.currentRound;
+  schedule = s.schedule;
   return true;
 }
 
@@ -117,17 +136,16 @@ const gameDiv = document.getElementById("screen-game");
 
 function setupSelection() {
   teams.forEach(t => {
-    const btn = document.createElement("button");
-    btn.innerText = t.name;
-    btn.onclick = () => startGame(t.name);
-    selectDiv.appendChild(btn);
+    const b = document.createElement("button");
+    b.innerText = t.name;
+    b.onclick = () => startGame(t.name);
+    selectDiv.appendChild(b);
   });
 }
 
 function startGame(team) {
   myTeam = team;
   schedule = generateSeason();
-  currentRound = 0;
   showGame();
   saveGame();
 }
@@ -135,34 +153,39 @@ function startGame(team) {
 function showGame() {
   selectDiv.classList.add("hidden");
   gameDiv.classList.remove("hidden");
-
   document.getElementById("teamName").innerText = "Seu time: " + myTeam;
   document.getElementById("money").innerText = money;
   document.getElementById("round").innerText = currentRound + 1;
   document.getElementById("totalRounds").innerText = schedule.length;
 }
 
-/* ================== IA DE JOGO ================== */
+/* ================== FORÇA DO TIME ================== */
+function teamStats(team) {
+  let atk = 0, def = 0;
+  team.players.forEach(p => {
+    atk += p.atk;
+    def += p.def;
+  });
+  return { atk, def };
+}
+
 function calcGoals(atk, def) {
   const base = atk - def;
-  const random = Math.floor(Math.random() * 3); // aleatoriedade
-  const goals = Math.max(0, Math.floor((base + random) / 15));
-  return Math.min(goals, 6); // limite de gols
+  const rand = Math.floor(Math.random() * 3);
+  return Math.max(0, Math.min(6, Math.floor((base + rand) / 40)));
 }
 
 /* ================== PARTIDA ================== */
 function playRound() {
-  if (currentRound >= schedule.length) {
-    finishSeason();
-    return;
-  }
-
   const m = schedule[currentRound];
   const h = teams.find(t => t.name === m.h);
   const a = teams.find(t => t.name === m.a);
 
-  const gh = calcGoals(h.atk, a.def);
-  const ga = calcGoals(a.atk, h.def);
+  const hs = teamStats(h);
+  const as = teamStats(a);
+
+  const gh = calcGoals(hs.atk, as.def);
+  const ga = calcGoals(as.atk, hs.def);
 
   h.gf += gh; h.ga += ga;
   a.gf += ga; a.ga += gh;
@@ -171,93 +194,72 @@ function playRound() {
   else if (ga > gh) a.pts += 3;
   else { h.pts++; a.pts++; }
 
-  if (h.name === myTeam || a.name === myTeam) {
-    money += gh > ga && h.name === myTeam ? 15 : 7;
-  }
+  if (h.name === myTeam || a.name === myTeam) money += 10;
 
-  document.getElementById("output").innerHTML = `
-    <h3>Rodada ${currentRound + 1}</h3>
-    <p>${h.name} ${gh} x ${ga} ${a.name}</p>
-  `;
+  document.getElementById("output").innerHTML =
+    `<h3>${h.name} ${gh} x ${ga} ${a.name}</h3>`;
 
   currentRound++;
-  document.getElementById("round").innerText =
-    Math.min(currentRound + 1, schedule.length);
-
+  document.getElementById("round").innerText = currentRound + 1;
   document.getElementById("money").innerText = money;
   saveGame();
 }
 
-/* ================== MERCADO ================== */
-function showMarket() {
-  let html = "<h3>💸 Mercado de Transferências</h3>";
-
-  teams.forEach(t => {
-    if (t.name !== myTeam) {
-      const price = Math.floor((t.atk + t.def) / 2);
-      html += `
-        <p>
-          ${t.name} | ⚔️ ATK ${t.atk} | 🛡️ DEF ${t.def} | 💰 $${price}
-          <button onclick="buyTeam('${t.name}', ${price})">Comprar</button>
-        </p>
-      `;
-    }
+/* ================== ELENCO ================== */
+function showSquad() {
+  const team = teams.find(t => t.name === myTeam);
+  let html = "<h3>👥 Elenco</h3><table><tr><th>Nome</th><th>Pos</th><th>ATK</th><th>DEF</th></tr>";
+  team.players.forEach(p => {
+    html += `<tr><td>${p.name}</td><td>${p.pos}</td><td>${p.atk}</td><td>${p.def}</td></tr>`;
   });
-
+  html += "</table>";
   document.getElementById("output").innerHTML = html;
 }
 
-function buyTeam(name, price) {
-  if (money < price) {
-    alert("Dinheiro insuficiente!");
-    return;
-  }
+/* ================== MERCADO ================== */
+function showMarket() {
+  let html = "<h3>💸 Mercado</h3>";
+  teams.forEach(t => {
+    if (t.name !== myTeam) {
+      t.players.forEach(p => {
+        html += `
+          <p>${p.name} (${p.pos}) ATK:${p.atk} DEF:${p.def} 💰$${p.price}
+          <button onclick="buyPlayer('${t.name}','${p.name}')">Comprar</button></p>`;
+      });
+    }
+  });
+  document.getElementById("output").innerHTML = html;
+}
 
-  const my = teams.find(t => t.name === myTeam);
-  const target = teams.find(t => t.name === name);
+function buyPlayer(teamName, playerName) {
+  const buyer = teams.find(t => t.name === myTeam);
+  const seller = teams.find(t => t.name === teamName);
+  const idx = seller.players.findIndex(p => p.name === playerName);
+  const p = seller.players[idx];
 
-  my.atk += 3;
-  my.def += 2;
-  target.atk -= 2;
-  target.def -= 2;
+  if (money < p.price) return alert("Dinheiro insuficiente!");
 
-  money -= price;
+  money -= p.price;
+  buyer.players.push(p);
+  seller.players.splice(idx, 1);
+
   document.getElementById("money").innerText = money;
-
-  alert("Transferência concluída!");
+  alert("Jogador contratado!");
   saveGame();
 }
 
 /* ================== CLASSIFICAÇÃO ================== */
 function showTable() {
-  let html = `
-  <table>
-    <tr><th>Time</th><th>Pts</th><th>ATK</th><th>DEF</th></tr>
-  `;
-
+  let html = "<table><tr><th>Time</th><th>Pts</th></tr>";
   teams.slice().sort((a,b)=>b.pts-a.pts).forEach(t=>{
-    html += `
-    <tr class="${t.name===myTeam?'highlight':''}">
-      <td>${t.name}</td>
-      <td>${t.pts}</td>
-      <td>${t.atk}</td>
-      <td>${t.def}</td>
-    </tr>`;
+    html += `<tr class="${t.name===myTeam?'highlight':''}">
+      <td>${t.name}</td><td>${t.pts}</td></tr>`;
   });
-
   html += "</table>";
   document.getElementById("output").innerHTML = html;
 }
 
-/* ================== FIM ================== */
-function finishSeason() {
-  const champ = teams.slice().sort((a,b)=>b.pts-a.pts)[0];
-  document.getElementById("output").innerHTML = `
-    <h2>🏆 Campeão: ${champ.name}</h2>
-  `;
-  localStorage.removeItem(KEY);
-}
-
+/* ================== RESET ================== */
 function newGame() {
   localStorage.removeItem(KEY);
   location.reload();

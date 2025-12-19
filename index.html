@@ -2,18 +2,65 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Teste Elifoot</title>
+<title>Elifoot Web</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0b6623;
+  color: white;
+  text-align: center;
+}
+button {
+  margin: 6px;
+  padding: 10px 18px;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
 </head>
 
 <body>
 
-<h1>TESTE DE CLIQUE</h1>
+<h1>⚽ ELIFOOT WEB</h1>
 
-<button onclick="teste()">CLIQUE AQUI</button>
+<div id="screen-select">
+  <h2>Escolha seu time</h2>
+  <button onclick="startGame('Sparta FC')">Sparta FC</button>
+  <button onclick="startGame('Roma FC')">Roma FC</button>
+  <button onclick="startGame('Athenas FC')">Athenas FC</button>
+  <button onclick="startGame('Troia FC')">Troia FC</button>
+</div>
+
+<div id="screen-game" style="display:none;"></div>
 
 <script>
-function teste() {
-  alert("FUNCIONOU");
+let myTeam = "";
+let round = 1;
+
+function startGame(team) {
+  myTeam = team;
+
+  document.getElementById("screen-select").style.display = "none";
+
+  const game = document.getElementById("screen-game");
+  game.style.display = "block";
+
+  game.innerHTML = `
+    <h2>Manager: ${myTeam}</h2>
+    <p>Rodada ${round}</p>
+
+    <button onclick="nextRound()">▶ Jogar Rodada</button>
+
+    <div id="output"></div>
+  `;
+}
+
+function nextRound() {
+  document.getElementById("output").innerHTML =
+    "<p>Rodada " + round + " jogada!</p>";
+
+  round++;
 }
 </script>
 

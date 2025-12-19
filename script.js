@@ -1,3 +1,5 @@
+let myTeam = null;
+
 const teams = [
   { name: "Sparta FC", attack: 70, defense: 65, points: 0, gf: 0, ga: 0 },
   { name: "Athenas FC", attack: 68, defense: 66, points: 0, gf: 0, ga: 0 },
@@ -5,6 +7,28 @@ const teams = [
   { name: "Troia FC", attack: 65, defense: 70, points: 0, gf: 0, ga: 0 }
 ];
 
+// MOSTRAR TIMES PARA ESCOLHA
+const teamsDiv = document.getElementById("teams");
+
+teams.forEach((team, index) => {
+  const btn = document.createElement("button");
+  btn.innerText = team.name;
+  btn.onclick = () => selectTeam(index);
+  teamsDiv.appendChild(btn);
+});
+
+// ESCOLHER TIME
+function selectTeam(index) {
+  myTeam = teams[index];
+
+  document.getElementById("team-selection").style.display = "none";
+  document.getElementById("game-menu").style.display = "block";
+
+  document.getElementById("my-team").innerText =
+    "Seu time: " + myTeam.name;
+}
+
+// SIMULAÇÃO DE GOLS
 function randomGoals(att, def) {
   let goals = 0;
   for (let i = 0; i < 5; i++) {
@@ -13,6 +37,7 @@ function randomGoals(att, def) {
   return goals;
 }
 
+// JOGAR RODADA
 function playRound() {
   let output = "<h3>🔴 Rodada</h3>";
 
@@ -36,10 +61,12 @@ function playRound() {
   document.getElementById("output").innerHTML = output;
 }
 
+// CLASSIFICAÇÃO
 function showTable() {
   let output = "<h3>📊 Classificação</h3>";
 
   teams
+    .slice()
     .sort((a, b) => b.points - a.points)
     .forEach(t => {
       output += `<p>${t.name} - ${t.points} pts (${t.gf}:${t.ga})</p>`;

@@ -1,33 +1,56 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>⚽ Elifoot Web</title>
-  <link rel="stylesheet" href="./style.css">
+<meta charset="UTF-8">
+<title>Elifoot Web</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0b6623;
+  color: white;
+  text-align: center;
+}
+button {
+  margin: 5px;
+  padding: 10px 15px;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
 </head>
+
 <body>
 
-  <div class="container">
-    <h1>⚽ ELIFOOT WEB</h1>
+<h1>⚽ ELIFOOT WEB</h1>
 
-    <!-- SELEÇÃO DE TIME -->
-    <div id="team-selection">
-      <h2>Escolha seu time</h2>
-      <div id="teams"></div>
-    </div>
+<div id="team-selection">
+  <h2>Escolha seu time</h2>
+  <div id="teams"></div>
+</div>
 
-    <!-- MENU DO JOGO -->
-    <div id="game-menu" style="display:none;">
-      <p id="my-team"></p>
+<div id="game" style="display:none;">
+  <h2 id="myTeam"></h2>
+</div>
 
-      <button id="btn-round">Jogar Rodada</button>
-      <button id="btn-table">Ver Classificação</button>
+<script>
+const teams = ["Sparta FC", "Roma FC", "Athenas FC", "Troia FC"];
 
-      <div id="output"></div>
-    </div>
-  </div>
+const teamsDiv = document.getElementById("teams");
+const gameDiv = document.getElementById("game");
+const myTeamText = document.getElementById("myTeam");
 
-  <!-- SCRIPT NO FINAL -->
-  <script src="./script.js"></script>
+teams.forEach(team => {
+  const btn = document.createElement("button");
+  btn.innerText = team;
+  btn.onclick = () => {
+    document.getElementById("team-selection").style.display = "none";
+    gameDiv.style.display = "block";
+    myTeamText.innerText = "Seu time: " + team;
+  };
+  teamsDiv.appendChild(btn);
+});
+</script>
+
 </body>
 </html>

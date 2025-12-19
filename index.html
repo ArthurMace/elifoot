@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>⚽ ELIFOOT WEB</title>
+  <title>⚽ Elifoot Web</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -10,12 +10,21 @@
   <div class="container">
     <h1>⚽ ELIFOOT WEB</h1>
 
-    <div id="menu">
-      <button onclick="playRound()">Jogar Rodada</button>
-      <button onclick="showTable()">Ver Classificação</button>
+    <!-- SELEÇÃO DE TIME -->
+    <div id="team-selection">
+      <h2>Escolha seu time</h2>
+      <div id="teams"></div>
     </div>
 
-    <div id="output"></div>
+    <!-- MENU DO JOGO -->
+    <div id="game-menu" style="display:none;">
+      <p id="my-team"></p>
+
+      <button onclick="playRound()">Jogar Rodada</button>
+      <button onclick="showTable()">Ver Classificação</button>
+
+      <div id="output"></div>
+    </div>
   </div>
 
   <script src="./script.js"></script>

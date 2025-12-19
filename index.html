@@ -30,4 +30,82 @@ button {
 <div id="team-selection">
   <h2>Escolha seu time</h2>
   <button onclick="startGame('Sparta FC')">Sparta FC</button>
-  <button onclick="startGame('Roma FC')">Ro
+  <button onclick="startGame('Roma FC')">Roma FC</button>
+  <button onclick="startGame('Athenas FC')">Athenas FC</button>
+  <button onclick="startGame('Troia FC')">Troia FC</button>
+</div>
+
+<div id="game" style="display:none;"></div>
+
+<script>
+let round = 1;
+
+const teams = [
+  { name: "Sparta FC", pts: 0, gf: 0, ga: 0 },
+  { name: "Roma FC", pts: 0, gf: 0, ga: 0 },
+  { name: "Athenas FC", pts: 0, gf: 0, ga: 0 },
+  { name: "Troia FC", pts: 0, gf: 0, ga: 0 }
+];
+
+let myTeam = null;
+
+function startGame(teamName) {
+  myTeam = teams.find(t => t.name === teamName);
+
+  document.getElementById("team-selection").style.display = "none";
+
+  const game = document.getElementById("game");
+  game.style.display = "block";
+
+  game.innerHTML = `
+    <h2>Seu time: ${myTeam.name}</h2>
+    <p>Rodada: <span id="round">${round}</span></p>
+
+    <button onclick="playRound()">▶ Jogar Rodada</button>
+    <button onclick="showTable()">📊 Classificação</button>
+
+    <div id="output"></div>
+  `;
+}
+
+function playRound() {
+  let html = `<h3>⚽ Resultados – Rodada ${round}</h3>`;
+
+  for (let i = 0; i < teams.length; i += 2) {
+    let a = teams[i];
+    let b = teams[i + 1];
+
+    let gA = Math.floor(Math.random() * 4);
+    let gB = Math.floor(Math.random() * 4);
+
+    a.gf += gA; a.ga += gB;
+    b.gf += gB; b.ga += gA;
+
+    if (gA > gB) a.pts += 3;
+    else if (gB > gA) b.pts += 3;
+    else { a.pts++; b.pts++; }
+
+    html += `<p>${a.name} ${gA} x ${gB} ${b.name}</p>`;
+  }
+
+  round++;
+  document.getElementById("round").innerText = round;
+  document.getElementById("output").innerHTML = html;
+}
+
+function showTable() {
+  let html = "<h3>📊 Classificação</h3>";
+
+  teams
+    .slice()
+    .sort((a, b) => b.pts - a.pts)
+    .forEach(t => {
+      html += `<p>${t.name} - ${t.pts} pts (${t.gf}:${t.ga})</p>`;
+    });
+
+  document.getElementById("output").innerHTML = html;
+}
+</script>
+
+</body>
+</html>

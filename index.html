@@ -67,13 +67,13 @@ const KEY = "elifoot-save";
 
 /* ================== TIMES ================== */
 let teams = [
-  { name: "Sparta FC", pts: 0, gf: 0, ga: 0, strength: 75 },
-  { name: "Roma FC", pts: 0, gf: 0, ga: 0, strength: 70 },
-  { name: "Athenas FC", pts: 0, gf: 0, ga: 0, strength: 65 },
-  { name: "Troia FC", pts: 0, gf: 0, ga: 0, strength: 60 }
+  { name: "Sparta FC", pts: 0, gf: 0, ga: 0, atk: 80, def: 75 },
+  { name: "Roma FC", pts: 0, gf: 0, ga: 0, atk: 75, def: 72 },
+  { name: "Athenas FC", pts: 0, gf: 0, ga: 0, atk: 70, def: 68 },
+  { name: "Troia FC", pts: 0, gf: 0, ga: 0, atk: 65, def: 65 }
 ];
 
-/* ================== JOGADOR ================== */
+/* ================== PLAYER ================== */
 let myTeam = "";
 let money = 100;
 let currentRound = 0;
@@ -142,6 +142,14 @@ function showGame() {
   document.getElementById("totalRounds").innerText = schedule.length;
 }
 
+/* ================== IA DE JOGO ================== */
+function calcGoals(atk, def) {
+  const base = atk - def;
+  const random = Math.floor(Math.random() * 3); // aleatoriedade
+  const goals = Math.max(0, Math.floor((base + random) / 15));
+  return Math.min(goals, 6); // limite de gols
+}
+
 /* ================== PARTIDA ================== */
 function playRound() {
   if (currentRound >= schedule.length) {
@@ -153,8 +161,8 @@ function playRound() {
   const h = teams.find(t => t.name === m.h);
   const a = teams.find(t => t.name === m.a);
 
-  const gh = Math.floor(Math.random() * (h.strength / 20));
-  const ga = Math.floor(Math.random() * (a.strength / 20));
+  const gh = calcGoals(h.atk, a.def);
+  const ga = calcGoals(a.atk, h.def);
 
   h.gf += gh; h.ga += ga;
   a.gf += ga; a.ga += gh;
@@ -164,7 +172,7 @@ function playRound() {
   else { h.pts++; a.pts++; }
 
   if (h.name === myTeam || a.name === myTeam) {
-    money += gh > ga && h.name === myTeam ? 10 : 5;
+    money += gh > ga && h.name === myTeam ? 15 : 7;
   }
 
   document.getElementById("output").innerHTML = `
@@ -186,10 +194,10 @@ function showMarket() {
 
   teams.forEach(t => {
     if (t.name !== myTeam) {
-      const price = Math.floor(t.strength * 1.5);
+      const price = Math.floor((t.atk + t.def) / 2);
       html += `
         <p>
-          ${t.name} | Força: ${t.strength} | 💰 $${price}
+          ${t.name} | ⚔️ ATK ${t.atk} | 🛡️ DEF ${t.def} | 💰 $${price}
           <button onclick="buyTeam('${t.name}', ${price})">Comprar</button>
         </p>
       `;
@@ -208,12 +216,15 @@ function buyTeam(name, price) {
   const my = teams.find(t => t.name === myTeam);
   const target = teams.find(t => t.name === name);
 
-  my.strength += 5;
-  target.strength -= 5;
-  money -= price;
+  my.atk += 3;
+  my.def += 2;
+  target.atk -= 2;
+  target.def -= 2;
 
+  money -= price;
   document.getElementById("money").innerText = money;
-  alert("Transferência realizada!");
+
+  alert("Transferência concluída!");
   saveGame();
 }
 
@@ -221,7 +232,7 @@ function buyTeam(name, price) {
 function showTable() {
   let html = `
   <table>
-    <tr><th>Time</th><th>Pts</th><th>Força</th></tr>
+    <tr><th>Time</th><th>Pts</th><th>ATK</th><th>DEF</th></tr>
   `;
 
   teams.slice().sort((a,b)=>b.pts-a.pts).forEach(t=>{
@@ -229,7 +240,8 @@ function showTable() {
     <tr class="${t.name===myTeam?'highlight':''}">
       <td>${t.name}</td>
       <td>${t.pts}</td>
-      <td>${t.strength}</td>
+      <td>${t.atk}</td>
+      <td>${t.def}</td>
     </tr>`;
   });
 

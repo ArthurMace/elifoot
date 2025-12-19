@@ -13,15 +13,13 @@ body {
 }
 
 button {
-  padding: 10px 18px;
-  margin: 6px;
-  font-size: 16px;
+  padding: 8px 16px;
+  margin: 5px;
+  font-size: 15px;
   cursor: pointer;
 }
 
-.hidden {
-  display: none;
-}
+.hidden { display: none; }
 
 table {
   margin: 15px auto;
@@ -34,7 +32,7 @@ td, th {
 }
 
 .highlight {
-  background: #ffd700;
+  background: gold;
   color: black;
 }
 </style>
@@ -45,20 +43,19 @@ td, th {
 <h1>⚽ ELIFOOT WEB</h1>
 
 <!-- SELEÇÃO -->
-<div id="screen-select" class="hidden">
+<div id="screen-select">
   <h2>Escolha seu time</h2>
 </div>
 
 <!-- JOGO -->
 <div id="screen-game" class="hidden">
-  <h2 id="myTeam"></h2>
-  <p>
-    Rodada <span id="round"></span> /
-    <span id="totalRounds"></span>
-  </p>
+  <h2 id="teamName"></h2>
+  <p>💰 Dinheiro: $<span id="money"></span></p>
+  <p>Rodada <span id="round"></span> / <span id="totalRounds"></span></p>
 
   <button onclick="playRound()">▶ Jogar Rodada</button>
   <button onclick="showTable()">📊 Classificação</button>
+  <button onclick="showMarket()">💸 Mercado</button>
   <button onclick="newGame()">🆕 Novo Jogo</button>
 
   <div id="output"></div>
@@ -66,68 +63,59 @@ td, th {
 
 <script>
 /* ================== STORAGE ================== */
-const STORAGE_KEY = "elifoot-save";
+const KEY = "elifoot-save";
 
-/* ================== DADOS ================== */
+/* ================== TIMES ================== */
+let teams = [
+  { name: "Sparta FC", pts: 0, gf: 0, ga: 0, strength: 75 },
+  { name: "Roma FC", pts: 0, gf: 0, ga: 0, strength: 70 },
+  { name: "Athenas FC", pts: 0, gf: 0, ga: 0, strength: 65 },
+  { name: "Troia FC", pts: 0, gf: 0, ga: 0, strength: 60 }
+];
+
+/* ================== JOGADOR ================== */
 let myTeam = "";
+let money = 100;
 let currentRound = 0;
 let schedule = [];
 
-let teams = [
-  { name: "Sparta FC", pts: 0, gf: 0, ga: 0 },
-  { name: "Roma FC", pts: 0, gf: 0, ga: 0 },
-  { name: "Athenas FC", pts: 0, gf: 0, ga: 0 },
-  { name: "Troia FC", pts: 0, gf: 0, ga: 0 }
-];
-
-/* ================== SEASON ================== */
-function generateSeason(teamList) {
-  const matches = [];
-
-  for (let i = 0; i < teamList.length; i++) {
-    for (let j = i + 1; j < teamList.length; j++) {
-      matches.push({ home: teamList[i].name, away: teamList[j].name });
+/* ================== TEMPORADA ================== */
+function generateSeason() {
+  let games = [];
+  for (let i = 0; i < teams.length; i++) {
+    for (let j = i + 1; j < teams.length; j++) {
+      games.push({ h: teams[i].name, a: teams[j].name });
+      games.push({ h: teams[j].name, a: teams[i].name });
     }
   }
-
-  const returnMatches = matches.map(m => ({
-    home: m.away,
-    away: m.home
-  }));
-
-  return matches.concat(returnMatches);
+  return games;
 }
 
 /* ================== SAVE / LOAD ================== */
 function saveGame() {
-  const data = {
-    myTeam,
-    currentRound,
-    teams,
-    schedule
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(KEY, JSON.stringify({
+    teams, myTeam, money, currentRound, schedule
+  }));
 }
 
 function loadGame() {
-  const data = localStorage.getItem(STORAGE_KEY);
+  const data = localStorage.getItem(KEY);
   if (!data) return false;
 
   const save = JSON.parse(data);
-  myTeam = save.myTeam;
-  currentRound = save.currentRound;
   teams = save.teams;
+  myTeam = save.myTeam;
+  money = save.money;
+  currentRound = save.currentRound;
   schedule = save.schedule;
   return true;
 }
 
-/* ================== UI ================== */
+/* ================== START ================== */
 const selectDiv = document.getElementById("screen-select");
 const gameDiv = document.getElementById("screen-game");
 
 function setupSelection() {
-  selectDiv.innerHTML = "<h2>Escolha seu time</h2>";
-
   teams.forEach(t => {
     const btn = document.createElement("button");
     btn.innerText = t.name;
@@ -136,12 +124,10 @@ function setupSelection() {
   });
 }
 
-/* ================== START ================== */
-function startGame(teamName) {
-  myTeam = teamName;
-  schedule = generateSeason(teams);
+function startGame(team) {
+  myTeam = team;
+  schedule = generateSeason();
   currentRound = 0;
-
   showGame();
   saveGame();
 }
@@ -150,103 +136,124 @@ function showGame() {
   selectDiv.classList.add("hidden");
   gameDiv.classList.remove("hidden");
 
-  document.getElementById("myTeam").innerText = "Seu time: " + myTeam;
+  document.getElementById("teamName").innerText = "Seu time: " + myTeam;
+  document.getElementById("money").innerText = money;
   document.getElementById("round").innerText = currentRound + 1;
   document.getElementById("totalRounds").innerText = schedule.length;
 }
 
-/* ================== GAME ================== */
+/* ================== PARTIDA ================== */
 function playRound() {
   if (currentRound >= schedule.length) {
     finishSeason();
     return;
   }
 
-  const match = schedule[currentRound];
-  const home = teams.find(t => t.name === match.home);
-  const away = teams.find(t => t.name === match.away);
+  const m = schedule[currentRound];
+  const h = teams.find(t => t.name === m.h);
+  const a = teams.find(t => t.name === m.a);
 
-  const gh = Math.floor(Math.random() * 4);
-  const ga = Math.floor(Math.random() * 4);
+  const gh = Math.floor(Math.random() * (h.strength / 20));
+  const ga = Math.floor(Math.random() * (a.strength / 20));
 
-  home.gf += gh; home.ga += ga;
-  away.gf += ga; away.ga += gh;
+  h.gf += gh; h.ga += ga;
+  a.gf += ga; a.ga += gh;
 
-  if (gh > ga) home.pts += 3;
-  else if (ga > gh) away.pts += 3;
-  else { home.pts++; away.pts++; }
+  if (gh > ga) h.pts += 3;
+  else if (ga > gh) a.pts += 3;
+  else { h.pts++; a.pts++; }
+
+  if (h.name === myTeam || a.name === myTeam) {
+    money += gh > ga && h.name === myTeam ? 10 : 5;
+  }
 
   document.getElementById("output").innerHTML = `
     <h3>Rodada ${currentRound + 1}</h3>
-    <p>${home.name} ${gh} x ${ga} ${away.name}</p>
+    <p>${h.name} ${gh} x ${ga} ${a.name}</p>
   `;
 
   currentRound++;
   document.getElementById("round").innerText =
     Math.min(currentRound + 1, schedule.length);
 
+  document.getElementById("money").innerText = money;
   saveGame();
 }
 
-/* ================== TABLE ================== */
+/* ================== MERCADO ================== */
+function showMarket() {
+  let html = "<h3>💸 Mercado de Transferências</h3>";
+
+  teams.forEach(t => {
+    if (t.name !== myTeam) {
+      const price = Math.floor(t.strength * 1.5);
+      html += `
+        <p>
+          ${t.name} | Força: ${t.strength} | 💰 $${price}
+          <button onclick="buyTeam('${t.name}', ${price})">Comprar</button>
+        </p>
+      `;
+    }
+  });
+
+  document.getElementById("output").innerHTML = html;
+}
+
+function buyTeam(name, price) {
+  if (money < price) {
+    alert("Dinheiro insuficiente!");
+    return;
+  }
+
+  const my = teams.find(t => t.name === myTeam);
+  const target = teams.find(t => t.name === name);
+
+  my.strength += 5;
+  target.strength -= 5;
+  money -= price;
+
+  document.getElementById("money").innerText = money;
+  alert("Transferência realizada!");
+  saveGame();
+}
+
+/* ================== CLASSIFICAÇÃO ================== */
 function showTable() {
   let html = `
-    <h3>Classificação</h3>
-    <table>
-      <tr>
-        <th>Time</th>
-        <th>Pts</th>
-        <th>GM</th>
-        <th>GS</th>
-      </tr>
+  <table>
+    <tr><th>Time</th><th>Pts</th><th>Força</th></tr>
   `;
 
-  teams
-    .slice()
-    .sort((a, b) => b.pts - a.pts)
-    .forEach(t => {
-      const cls = t.name === myTeam ? "highlight" : "";
-      html += `
-        <tr class="${cls}">
-          <td>${t.name}</td>
-          <td>${t.pts}</td>
-          <td>${t.gf}</td>
-          <td>${t.ga}</td>
-        </tr>
-      `;
-    });
+  teams.slice().sort((a,b)=>b.pts-a.pts).forEach(t=>{
+    html += `
+    <tr class="${t.name===myTeam?'highlight':''}">
+      <td>${t.name}</td>
+      <td>${t.pts}</td>
+      <td>${t.strength}</td>
+    </tr>`;
+  });
 
   html += "</table>";
   document.getElementById("output").innerHTML = html;
 }
 
-/* ================== END ================== */
+/* ================== FIM ================== */
 function finishSeason() {
-  const champion = teams
-    .slice()
-    .sort((a, b) => b.pts - a.pts)[0];
-
+  const champ = teams.slice().sort((a,b)=>b.pts-a.pts)[0];
   document.getElementById("output").innerHTML = `
-    <h2>🏆 Fim da Temporada</h2>
-    <p>Campeão: <strong>${champion.name}</strong></p>
+    <h2>🏆 Campeão: ${champ.name}</h2>
   `;
-
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(KEY);
 }
 
-/* ================== NEW GAME ================== */
 function newGame() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(KEY);
   location.reload();
 }
 
 /* ================== INIT ================== */
-if (loadGame()) {
-  showGame();
-} else {
-  setupSelection();
-  selectDiv.classList.remove("hidden");
-}
+if (loadGame()) showGame();
+else setupSelection();
 </script>
 
 </body>

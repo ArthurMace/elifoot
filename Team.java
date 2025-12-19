@@ -16,8 +16,8 @@ public class Team {
         this.name = name;
     }
 
-    public void addPlayer(Player player) {
-        players.add(player);
+    public void addPlayer(Player p) {
+        players.add(p);
     }
 
     public int attackPower() {

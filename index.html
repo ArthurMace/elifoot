@@ -11,34 +11,25 @@ body {
   color: white;
   text-align: center;
 }
-
-button {
-  padding: 8px 16px;
+button, select {
+  padding: 8px 14px;
   margin: 5px;
   cursor: pointer;
 }
-
-select {
-  padding: 6px;
-  font-size: 15px;
-}
-
 .hidden { display: none; }
-
 table {
   margin: 15px auto;
   border-collapse: collapse;
 }
-
 td, th {
   border: 1px solid white;
   padding: 6px 10px;
 }
-
 .highlight {
   background: gold;
   color: black;
 }
+small { color: #ddd; }
 </style>
 </head>
 
@@ -52,12 +43,14 @@ td, th {
 
 <div id="screen-game" class="hidden">
   <h2 id="teamName"></h2>
+
   <p>💰 Dinheiro: $<span id="money"></span></p>
+
   <p>
     🧠 Tática:
     <select id="tactic" onchange="saveGame()">
       <option value="ofensivo">Ofensivo</option>
-      <option value="equilibrado" selected>Equilibrado</option>
+      <option value="equilibrado">Equilibrado</option>
       <option value="defensivo">Defensivo</option>
     </select>
   </p>
@@ -81,27 +74,18 @@ let teams = [
   {
     name: "Sparta FC",
     players: [
-      { name: "Leonidas", pos: "ATA", atk: 80, def: 20, price: 60 },
-      { name: "Ajax", pos: "MEI", atk: 65, def: 50, price: 50 },
-      { name: "Hector", pos: "ZAG", atk: 30, def: 75, price: 45 }
+      { name: "Leonidas", pos: "ATA", atk: 80, def: 20, age: 27, peak: 28, price: 60 },
+      { name: "Ajax", pos: "MEI", atk: 65, def: 50, age: 24, peak: 27, price: 50 },
+      { name: "Hector", pos: "ZAG", atk: 30, def: 75, age: 30, peak: 29, price: 45 }
     ],
     pts: 0, gf: 0, ga: 0
   },
   {
     name: "Roma FC",
     players: [
-      { name: "Cesar", pos: "ATA", atk: 75, def: 25, price: 55 },
-      { name: "Brutus", pos: "MEI", atk: 60, def: 55, price: 48 },
-      { name: "Maximus", pos: "ZAG", atk: 35, def: 70, price: 42 }
-    ],
-    pts: 0, gf: 0, ga: 0
-  },
-  {
-    name: "Athenas FC",
-    players: [
-      { name: "Pericles", pos: "ATA", atk: 70, def: 30, price: 50 },
-      { name: "Plato", pos: "MEI", atk: 65, def: 45, price: 46 },
-      { name: "Socrates", pos: "ZAG", atk: 28, def: 72, price: 43 }
+      { name: "Cesar", pos: "ATA", atk: 75, def: 25, age: 26, peak: 28, price: 55 },
+      { name: "Brutus", pos: "MEI", atk: 60, def: 55, age: 28, peak: 27, price: 48 },
+      { name: "Maximus", pos: "ZAG", atk: 35, def: 70, age: 31, peak: 29, price: 42 }
     ],
     pts: 0, gf: 0, ga: 0
   }
@@ -177,23 +161,15 @@ function showGame() {
   document.getElementById("tactic").value = tactic;
 }
 
-/* ================== FORÇA + TÁTICA ================== */
+/* ================== FORÇA ================== */
 function teamStats(team) {
   let atk = 0, def = 0;
-  team.players.forEach(p => {
-    atk += p.atk;
-    def += p.def;
-  });
+  team.players.forEach(p => { atk += p.atk; def += p.def; });
 
   if (team.name === myTeam) {
-    if (tactic === "ofensivo") {
-      atk *= 1.2; def *= 0.9;
-    }
-    if (tactic === "defensivo") {
-      atk *= 0.85; def *= 1.25;
-    }
+    if (tactic === "ofensivo") { atk *= 1.2; def *= 0.9; }
+    if (tactic === "defensivo") { atk *= 0.85; def *= 1.25; }
   }
-
   return { atk, def };
 }
 
@@ -201,6 +177,20 @@ function calcGoals(atk, def) {
   const base = atk - def;
   const rand = Math.floor(Math.random() * 4);
   return Math.max(0, Math.min(6, Math.floor((base + rand) / 40)));
+}
+
+/* ================== EVOLUÇÃO ================== */
+function evolvePlayers(team) {
+  team.players.forEach(p => {
+    if (p.age <= p.peak && Math.random() < 0.3) {
+      if (Math.random() < 0.5) p.atk = Math.min(99, p.atk + 1);
+      else p.def = Math.min(99, p.def + 1);
+    }
+    if (p.age > p.peak && Math.random() < 0.25) {
+      if (Math.random() < 0.5) p.atk = Math.max(20, p.atk - 1);
+      else p.def = Math.max(20, p.def - 1);
+    }
+  });
 }
 
 /* ================== PARTIDA ================== */
@@ -222,10 +212,16 @@ function playRound() {
   else if (ga > gh) a.pts += 3;
   else { h.pts++; a.pts++; }
 
-  if (h.name === myTeam || a.name === myTeam) money += 10;
+  teams.forEach(t => {
+    evolvePlayers(t);
+    t.players.forEach(p => p.age += 0.02);
+  });
+
+  money += 10;
 
   document.getElementById("output").innerHTML =
-    `<h3>${h.name} ${gh} x ${ga} ${a.name}</h3>`;
+    `<h3>${h.name} ${gh} x ${ga} ${a.name}</h3>
+     <small>Jogadores evoluíram / regrediram conforme a idade</small>`;
 
   currentRound++;
   document.getElementById("round").innerText = currentRound + 1;
@@ -236,9 +232,10 @@ function playRound() {
 /* ================== TELAS ================== */
 function showSquad() {
   const team = teams.find(t => t.name === myTeam);
-  let html = "<h3>👥 Elenco</h3><table><tr><th>Nome</th><th>Pos</th><th>ATK</th><th>DEF</th></tr>";
+  let html = "<h3>👥 Elenco</h3><table><tr><th>Nome</th><th>Pos</th><th>ATK</th><th>DEF</th><th>Idade</th></tr>";
   team.players.forEach(p => {
-    html += `<tr><td>${p.name}</td><td>${p.pos}</td><td>${p.atk}</td><td>${p.def}</td></tr>`;
+    html += `<tr><td>${p.name}</td><td>${p.pos}</td>
+    <td>${p.atk}</td><td>${p.def}</td><td>${p.age.toFixed(1)}</td></tr>`;
   });
   html += "</table>";
   document.getElementById("output").innerHTML = html;
@@ -249,7 +246,7 @@ function showMarket() {
   teams.forEach(t => {
     if (t.name !== myTeam) {
       t.players.forEach(p => {
-        html += `<p>${p.name} (${p.pos}) 💰$${p.price}
+        html += `<p>${p.name} (${p.pos}) ${p.age.toFixed(1)} anos 💰$${p.price}
         <button onclick="buyPlayer('${t.name}','${p.name}')">Comprar</button></p>`;
       });
     }

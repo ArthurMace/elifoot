@@ -1,21 +1,40 @@
 package elifoot;
 
+import java.util.Scanner;
+
 public class Main {
 
     public static void main(String[] args) {
 
-        Team teamA = new Team("Sparta FC");
-        Team teamB = new Team("Athenas FC");
+        Scanner sc = new Scanner(System.in);
+        League league = new League();
 
-        for (int i = 1; i <= 11; i++) {
-            teamA.addPlayer(new Player("Jogador A" + i, "Campo", 60, 55, 80));
-            teamB.addPlayer(new Player("Jogador B" + i, "Campo", 58, 57, 78));
+        while (true) {
+            System.out.println("\n==============================");
+            System.out.println("      ⚽ ELIFOOT JAVA ⚽      ");
+            System.out.println("==============================");
+            System.out.println("1 - Jogar rodada");
+            System.out.println("2 - Ver classificação");
+            System.out.println("0 - Sair");
+            System.out.print("Escolha: ");
+
+            int option = sc.nextInt();
+
+            if (option == 1) {
+                league.playRound();
+            } 
+            else if (option == 2) {
+                league.showTable();
+            } 
+            else if (option == 0) {
+                System.out.println("Encerrando jogo...");
+                break;
+            } 
+            else {
+                System.out.println("Opção inválida.");
+            }
         }
 
-        MatchSimulator.playMatch(teamA, teamB);
-
-        System.out.println("\n🏆 Pontuação:");
-        System.out.println(teamA.name + ": " + teamA.points + " pts");
-        System.out.println(teamB.name + ": " + teamB.points + " pts");
+        sc.close();
     }
 }

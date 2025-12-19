@@ -6,34 +6,33 @@ public class MatchSimulator {
 
     private static final Random random = new Random();
 
-    public static void playMatch(Team home, Team away) {
+    public static void playMatch(Team a, Team b) {
 
-        int goalsHome = 0;
-        int goalsAway = 0;
+        int goalsA = 0;
+        int goalsB = 0;
 
-        for (int minute = 0; minute <= 90; minute += 10) {
+        for (int i = 0; i < 9; i++) {
+            if (random.nextInt(100) < a.attackPower() - b.defensePower() + 50)
+                goalsA++;
 
-            int chanceHome = home.attackPower() - away.defensePower() + random.nextInt(20);
-            int chanceAway = away.attackPower() - home.defensePower() + random.nextInt(20);
-
-            if (chanceHome > 50) goalsHome++;
-            if (chanceAway > 50) goalsAway++;
+            if (random.nextInt(100) < b.attackPower() - a.defensePower() + 50)
+                goalsB++;
         }
 
-        home.goalsFor += goalsHome;
-        home.goalsAgainst += goalsAway;
-        away.goalsFor += goalsAway;
-        away.goalsAgainst += goalsHome;
+        a.goalsFor += goalsA;
+        a.goalsAgainst += goalsB;
+        b.goalsFor += goalsB;
+        b.goalsAgainst += goalsA;
 
-        if (goalsHome > goalsAway) {
-            home.points += 3;
-        } else if (goalsAway > goalsHome) {
-            away.points += 3;
+        if (goalsA > goalsB) {
+            a.points += 3;
+        } else if (goalsB > goalsA) {
+            b.points += 3;
         } else {
-            home.points += 1;
-            away.points += 1;
+            a.points += 1;
+            b.points += 1;
         }
 
-        System.out.println("⚽ " + home.name + " " + goalsHome + " x " + goalsAway + " " + away.name);
+        System.out.println(a.name + " " + goalsA + " x " + goalsB + " " + b.name);
     }
 }

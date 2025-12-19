@@ -12,10 +12,13 @@ body {
   text-align: center;
 }
 button {
-  margin: 5px;
-  padding: 10px 15px;
+  margin: 6px;
+  padding: 10px 18px;
   font-size: 16px;
   cursor: pointer;
+}
+#game {
+  margin-top: 20px;
 }
 </style>
 </head>
@@ -26,31 +29,5 @@ button {
 
 <div id="team-selection">
   <h2>Escolha seu time</h2>
-  <div id="teams"></div>
-</div>
-
-<div id="game" style="display:none;">
-  <h2 id="myTeam"></h2>
-</div>
-
-<script>
-const teams = ["Sparta FC", "Roma FC", "Athenas FC", "Troia FC"];
-
-const teamsDiv = document.getElementById("teams");
-const gameDiv = document.getElementById("game");
-const myTeamText = document.getElementById("myTeam");
-
-teams.forEach(team => {
-  const btn = document.createElement("button");
-  btn.innerText = team;
-  btn.onclick = () => {
-    document.getElementById("team-selection").style.display = "none";
-    gameDiv.style.display = "block";
-    myTeamText.innerText = "Seu time: " + team;
-  };
-  teamsDiv.appendChild(btn);
-});
-</script>
-
-</body>
-</html>
+  <button onclick="startGame('Sparta FC')">Sparta FC</button>
+  <button onclick="startGame('Roma FC')">Ro

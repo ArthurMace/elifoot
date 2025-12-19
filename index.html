@@ -18,6 +18,11 @@ button {
   cursor: pointer;
 }
 
+select {
+  padding: 6px;
+  font-size: 15px;
+}
+
 .hidden { display: none; }
 
 table {
@@ -48,6 +53,15 @@ td, th {
 <div id="screen-game" class="hidden">
   <h2 id="teamName"></h2>
   <p>💰 Dinheiro: $<span id="money"></span></p>
+  <p>
+    🧠 Tática:
+    <select id="tactic" onchange="saveGame()">
+      <option value="ofensivo">Ofensivo</option>
+      <option value="equilibrado" selected>Equilibrado</option>
+      <option value="defensivo">Defensivo</option>
+    </select>
+  </p>
+
   <p>Rodada <span id="round"></span>/<span id="totalRounds"></span></p>
 
   <button onclick="playRound()">▶ Jogar Rodada</button>
@@ -98,6 +112,7 @@ let myTeam = "";
 let money = 100;
 let currentRound = 0;
 let schedule = [];
+let tactic = "equilibrado";
 
 /* ================== TEMPORADA ================== */
 function generateSeason() {
@@ -113,8 +128,9 @@ function generateSeason() {
 
 /* ================== SAVE ================== */
 function saveGame() {
+  tactic = document.getElementById("tactic").value;
   localStorage.setItem(KEY, JSON.stringify({
-    teams, myTeam, money, currentRound, schedule
+    teams, myTeam, money, currentRound, schedule, tactic
   }));
 }
 
@@ -127,6 +143,7 @@ function loadGame() {
   money = s.money;
   currentRound = s.currentRound;
   schedule = s.schedule;
+  tactic = s.tactic || "equilibrado";
   return true;
 }
 
@@ -157,21 +174,32 @@ function showGame() {
   document.getElementById("money").innerText = money;
   document.getElementById("round").innerText = currentRound + 1;
   document.getElementById("totalRounds").innerText = schedule.length;
+  document.getElementById("tactic").value = tactic;
 }
 
-/* ================== FORÇA DO TIME ================== */
+/* ================== FORÇA + TÁTICA ================== */
 function teamStats(team) {
   let atk = 0, def = 0;
   team.players.forEach(p => {
     atk += p.atk;
     def += p.def;
   });
+
+  if (team.name === myTeam) {
+    if (tactic === "ofensivo") {
+      atk *= 1.2; def *= 0.9;
+    }
+    if (tactic === "defensivo") {
+      atk *= 0.85; def *= 1.25;
+    }
+  }
+
   return { atk, def };
 }
 
 function calcGoals(atk, def) {
   const base = atk - def;
-  const rand = Math.floor(Math.random() * 3);
+  const rand = Math.floor(Math.random() * 4);
   return Math.max(0, Math.min(6, Math.floor((base + rand) / 40)));
 }
 
@@ -205,7 +233,7 @@ function playRound() {
   saveGame();
 }
 
-/* ================== ELENCO ================== */
+/* ================== TELAS ================== */
 function showSquad() {
   const team = teams.find(t => t.name === myTeam);
   let html = "<h3>👥 Elenco</h3><table><tr><th>Nome</th><th>Pos</th><th>ATK</th><th>DEF</th></tr>";
@@ -216,15 +244,13 @@ function showSquad() {
   document.getElementById("output").innerHTML = html;
 }
 
-/* ================== MERCADO ================== */
 function showMarket() {
   let html = "<h3>💸 Mercado</h3>";
   teams.forEach(t => {
     if (t.name !== myTeam) {
       t.players.forEach(p => {
-        html += `
-          <p>${p.name} (${p.pos}) ATK:${p.atk} DEF:${p.def} 💰$${p.price}
-          <button onclick="buyPlayer('${t.name}','${p.name}')">Comprar</button></p>`;
+        html += `<p>${p.name} (${p.pos}) 💰$${p.price}
+        <button onclick="buyPlayer('${t.name}','${p.name}')">Comprar</button></p>`;
       });
     }
   });
@@ -242,9 +268,7 @@ function buyPlayer(teamName, playerName) {
   money -= p.price;
   buyer.players.push(p);
   seller.players.splice(idx, 1);
-
   document.getElementById("money").innerText = money;
-  alert("Jogador contratado!");
   saveGame();
 }
 
@@ -259,7 +283,6 @@ function showTable() {
   document.getElementById("output").innerHTML = html;
 }
 
-/* ================== RESET ================== */
 function newGame() {
   localStorage.removeItem(KEY);
   location.reload();
